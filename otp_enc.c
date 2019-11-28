@@ -6,8 +6,41 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <fcntl.h>
 
 #define _DEFAULT_SOURCE
+
+char* getText(FILE *file){
+	char str[1024];
+	char c;
+	char* text;
+	memset(str, '\0', 1024);
+	int count = 0;
+
+	do{
+		c = fgetc(file);
+		if(c != 10){	//If char is not newline
+			str[count] = c;
+		}
+		count++;
+	}while(c != 10);
+
+	text = malloc(count * sizeof(char));
+	memset(text, '\0', sizeof(text));
+
+	count = 0;
+	fseek(file, 0, SEEK_SET);	//Sets file pointer back to beginning.
+
+	do{
+		c = fgetc(file);
+		if(c != 10){
+			text[count] = c;
+		}
+		count++;
+	}while(c != 10);
+
+	return text;
+}
 
 int main(int argc, char* argv[])
 {
@@ -15,14 +48,35 @@ int main(int argc, char* argv[])
 	struct sockaddr_in serverAddr;
 	struct hostent* serverHostInfo;
 	char str[256];
+	char* plaintext;
+	char* key;
 
-	// if(argc < 4){
-	// 	fprintf(stderr, "Enter valid arguments\n");
-	// 	exit(1);
-	// }
+	if(argc < 4){
+		fprintf(stderr, "Enter valid arguments\n");
+		exit(1);
+	}
+
+	for (int i = 0; i < strlen(argv[3]); i++){
+		if(argv[3][i] < 48 || argv[3][i] > 57){	//If port arg is not an int.
+			fprintf(stderr, "Enter valid port\n");
+			exit(1);
+		}
+	}
+
+	FILE *file;
+	file = fopen(argv[1], "r");
+	plaintext = getText(file);
+	fclose(file);
+
+	file = fopen(argv[2], "r");
+	key = getText(file);
+	fclose(file);
+
+	printf("plaintext: %s\n", plaintext);
+	printf("key: %s\n", key);
 
 	memset((char*)&serverAddr, '\0', sizeof(serverAddr));
-	port = atoi(argv[1]);		//CHANGE LATER TO SUPPORT ARGS
+	port = atoi(argv[3]);	//Changes port to integer
 
 	serverAddr.sin_family = AF_INET; // Create a network-capable socket
 	serverAddr.sin_port = htons(port); // Store the port number
