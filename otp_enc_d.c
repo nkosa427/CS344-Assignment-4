@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 
 int main(int argc, char* argv[])
 {
@@ -16,18 +17,37 @@ int main(int argc, char* argv[])
 	char str[256];
 	struct sockaddr_in serverAddr;
 	struct sockaddr_in clientAddr;
+	struct hostent* serverHostInfo;
 
 	if(argc < 2){
 		fprintf(stderr, "Enter correct number of args. \n");
 		exit(1);
 	}
 
-	memset((char*)&serverAddr, '\0', sizeof(serverAddr));
-	port = atoi(argv[1]);
+	// memset((char*)&serverAddr, '\0', sizeof(serverAddr));
+	// port = atoi(argv[1]);
 	
+	// serverAddr.sin_family = AF_INET;
+	// serverAddr.sin_port = htons(port);
+
+	// struct hostnet* serverInfo = gethostbyname("localhost");
+	// // serverAddr.sin_addr.s_addr = 
+	// memcpy((char*)&serverAddr.sin_addr.s_addr, (char*)serverInfo->h_addr_list[0], serverInfo->h_length);
+
+
+	memset((char*)&serverAddr, '\0', sizeof(serverAddr));
+	port = atoi(argv[1]);		//CHANGE LATER TO SUPPORT ARGS
+
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(port);
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	serverHostInfo = gethostbyname("localhost");
+	if(serverHostInfo == NULL){
+		fprintf(stderr, "CLIENT: ERROR, no such host\n"); 
+		exit(0); 
+	}
+	memcpy((char*)&serverAddr.sin_addr.s_addr, (char*)serverHostInfo->h_addr_list[0], serverHostInfo->h_length);
+
+
 
 	listenFD = socket(AF_INET, SOCK_STREAM, 0);
 	if(listenFD < 0){
@@ -53,8 +73,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Reading error\n");
 	}
 
-	printf("Server received message from client:\t");
-	printf("%s\n", str);
+	printf("RECEIVED FROM CLIENT:\t%s\n", str);
 
 	charsSent = send(estFD, "Message received\n", 17, 0);
 	if(charsSent < 0){
