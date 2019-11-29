@@ -24,7 +24,8 @@ int checkClient(){
 		count++;
 	}while(c != 10 && count < 256);
 
-	printf("clientname: %s\n", str);
+	fclose(file);
+	remove("clientName");
 
 	if(strcmp(str, "otp_enc") == 0){
 		printf("check0\n");
@@ -110,64 +111,89 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "Accept error\n");
 		}
 
-		printf("SERVER connected to client on port %d\n", clientAddr.sin_port);
+		// printf("SERVER connected to client on port %d\n", clientAddr.sin_port);
 
 		childProc = fork();
-		switch(childProc){
-			case -1:
-				perror("forking error");
-				exit(1);
-			case 0:
-				memset(str, '\0', 256);
-				charsRead = recv(estFD, str, 255, 0);
-				if(charsRead < 0){
-					fprintf(stderr, "Reading error\n");
-				}
+		if(rightClient == 0){
+			switch(childProc){
+				case -1:
+					perror("forking error");
+					exit(1);
+				case 0:
+					memset(str, '\0', 256);
+					charsRead = recv(estFD, str, 255, 0);
+					if(charsRead < 0){
+						fprintf(stderr, "Reading error\n");
+					}
 
-				printf("RECEIVED FROM CLIENT:\t%s\n", str);
+					printf("RECEIVED FROM CLIENT:\t%s\n", str);
+					if(strcmp(str, "otp_enc") != 0){
+						charsSent = send(estFD, "Must use otp_enc with otp_end_d", 31, 0);
+					}else{
+						charsSent = send(estFD, "Message received\n", 17, 0);
+					}
 
-				if(rightClient == 0){
+					if(charsSent < 0){
+						fprintf(stderr, "Error sending to client\n");
+					}
+
 					FILE* file;
 					file = fopen("clientName", "w+");
 					fprintf(file, "%s\n", str);
 					fclose(file);
-				}
 
-				charsSent = send(estFD, "Message received\n", 17, 0);
-				if(charsSent < 0){
-					fprintf(stderr, "Error sending to client\n");
-				}
-				close(estFD);
-				exit(0);
-			default:
-				printf("background PID: %d\n", childProc);
-				forkCount++;
-
-				if(rightClient == 0){
+					close(estFD);
+					exit(0);
+				default:
 					childPID = waitpid(childProc, &childExitMethod, 0);
-					forkCount--;
 					rightClient = checkClient();
 
 					if(rightClient == 0){
 						fprintf(stderr, "Not connected to otp_enc\n");
-						exit(1);
-						// charsSent = send(estFD, "Must use otp_enc with dec\n", 26, 0);
+						// exit(1);
+						charsSent = send(estFD, "Must use otp_enc with otp_end_d", 31, 0);
 					}
-				}
+			}
+		}
 
-				do{
-					childPID = waitpid(-1, &childExitMethod, WNOHANG);
-					printf("childpid:%d\n", childPID);
-					if(childPID > 0){
+		if(rightClient == 1){
+			switch(childProc){
+				case -1:
+					perror("forking error");
+					exit(1);
+				case 0:
+					memset(str, '\0', 256);
+					charsRead = recv(estFD, str, 255, 0);
+					if(charsRead < 0){
+						fprintf(stderr, "Reading error\n");
+					}
+
+					printf("RECEIVED FROM CLIENT:\t%s\n", str);
+
+					charsSent = send(estFD, "Message received\n", 17, 0);
+					if(charsSent < 0){
+						fprintf(stderr, "Error sending to client\n");
+					}
+					close(estFD);
+					exit(0);
+
+					
+				default:
+					forkCount++;
+
+					do{
+						childPID = waitpid(-1, &childExitMethod, WNOHANG);
+						if(childPID > 0){
+							forkCount--;
+						}
+					}while(childPID > 0);
+
+					if(forkCount > 4){
+						childPID = wait(&childExitMethod);
 						forkCount--;
 					}
-				}while(childPID > 0);
-
-				if(forkCount > 4){
-					childPID = wait(&childExitMethod);
-					forkCount--;
-				}
-		}
+			}
+		}	
 		
 	}while(1);
 

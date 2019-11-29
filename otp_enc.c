@@ -56,6 +56,8 @@ int main(int argc, char* argv[])
 	memset(progName, '\0', 8);
 	strcpy(progName, "otp_dec");
 
+	int goodConnection = 0;
+
 	if(argc < 4){
 		fprintf(stderr, "Enter valid arguments\n");
 		exit(1);
@@ -112,10 +114,14 @@ for (int i = 0; i < 3; i++){
 		if(i == 0){
 			toSend = strlen(progName);
 			charsSent = send(socketFD, progName, toSend, 0);
-		}else if(i == 1){
+		}
+
+		if(i == 1 && goodConnection == 1){
 			toSend = strlen(plaintext);
 			charsSent = send(socketFD, plaintext, toSend, 0);
-		}else{
+		}
+
+		if(i == 2 && goodConnection == 1){
 			toSend = strlen(plaintext);
 			charsSent = send(socketFD, key, toSend, 0);
 		}	
@@ -136,6 +142,13 @@ for (int i = 0; i < 3; i++){
 		charsRead = recv(socketFD, str, sizeof(str)-1, 0);
 		if(charsRead < 0){
 			fprintf(stderr, "Reading back from socket error\n");
+		}
+
+		if(i == 0 && strcmp(str, "Message received\n") != 0){
+			fprintf(stderr, "ERROR: Client mismatch, exiting now\n");
+			exit(1);
+		}else{
+			goodConnection = 1;
 		}
 
 		printf("RECEIVED FROM SERVER: \t%s\n", str);
