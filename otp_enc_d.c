@@ -24,7 +24,8 @@ int checkClient(){
 		count++;
 	}while(c != 10 && count < 256);
 
-	printf("clientname: %s\n", str);
+	fclose(file);
+	remove("clientName");
 
 	if(strcmp(str, "otp_enc") == 0){
 		printf("check0\n");
