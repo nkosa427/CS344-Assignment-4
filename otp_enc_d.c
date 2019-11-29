@@ -7,6 +7,33 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <fcntl.h>
+
+int checkClient(){
+	FILE* file;
+	char c;
+	char str[256];
+	int count = 0;
+	file = fopen("clientName", "r");
+
+	do{
+		c = fgetc(file);
+		if(c != 10 && count < 256){
+			str[count] = c;
+		}
+		count++;
+	}while(c != 10 && count < 256);
+
+	printf("clientname: %s\n", str);
+
+	if(strcmp(str, "otp_enc") == 0){
+		printf("check0\n");
+		return 1;
+	}else{
+		return 0;
+	}
+
+}
 
 int main(int argc, char* argv[])
 {
@@ -18,6 +45,8 @@ int main(int argc, char* argv[])
 	int parentPID = getpid();
 	int childExitMethod = -5;
 	int childPID = -5;
+
+	int rightClient = 0;
 
 	socklen_t clientInfo;
 	char str[256];
@@ -74,7 +103,7 @@ int main(int argc, char* argv[])
 
 	listen(listenFD, 5);
 
-	while(1){
+	do{
 		clientInfo = sizeof(clientAddr);
 		estFD = accept(listenFD, (struct sockaddr*)&clientAddr, &clientInfo);
 		if(estFD < 0){
@@ -97,6 +126,13 @@ int main(int argc, char* argv[])
 
 				printf("RECEIVED FROM CLIENT:\t%s\n", str);
 
+				if(rightClient == 0){
+					FILE* file;
+					file = fopen("clientName", "w+");
+					fprintf(file, "%s\n", str);
+					fclose(file);
+				}
+
 				charsSent = send(estFD, "Message received\n", 17, 0);
 				if(charsSent < 0){
 					fprintf(stderr, "Error sending to client\n");
@@ -107,12 +143,25 @@ int main(int argc, char* argv[])
 				printf("background PID: %d\n", childProc);
 				forkCount++;
 
+				if(rightClient == 0){
+					childPID = waitpid(childProc, &childExitMethod, 0);
+					forkCount--;
+					rightClient = checkClient();
+
+					if(rightClient == 0){
+						fprintf(stderr, "Not connected to otp_enc\n");
+						exit(1);
+						// charsSent = send(estFD, "Must use otp_enc with dec\n", 26, 0);
+					}
+				}
+
 				do{
 					childPID = waitpid(-1, &childExitMethod, WNOHANG);
-					if(childPID != 0){
+					printf("childpid:%d\n", childPID);
+					if(childPID > 0){
 						forkCount--;
 					}
-				}while(childPID != 0);
+				}while(childPID > 0);
 
 				if(forkCount > 4){
 					childPID = wait(&childExitMethod);
@@ -120,7 +169,7 @@ int main(int argc, char* argv[])
 				}
 		}
 		
-	}
+	}while(1);
 
 	close(listenFD);
 	printf("Server stopped. %d\n", getpid());

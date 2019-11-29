@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 	char* key;
 
 	memset(progName, '\0', 8);
-	strcpy(progName, "otp_enc");
+	strcpy(progName, "otp_dec");
 
 	if(argc < 4){
 		fprintf(stderr, "Enter valid arguments\n");
