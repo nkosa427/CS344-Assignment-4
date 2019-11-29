@@ -13,6 +13,27 @@
 
 // }
 
+char* separateStrings(char* str, int arg){
+	char c;
+	int count = 0;
+	int len = strlen(str) / 2 + 1;
+
+	char* text = malloc(len * sizeof(char));
+	memset(text, '\0', sizeof(text));
+
+	do{
+		c = str[arg];
+		if(c != 36){			//36 is ascii for $
+			text[count] = c;
+		}
+		arg++;
+		count++;
+	}while(c != 36 && arg < strlen(str));
+
+	return text;
+
+}
+
 int checkClient(){
 	FILE* file;
 	char c;
@@ -59,6 +80,9 @@ int main(int argc, char* argv[])
 	struct hostent* serverHostInfo;
 
 	pid_t childProc;
+
+	char* plaintext;
+	char* key;
 
 	if(argc < 2){
 		fprintf(stderr, "Enter correct number of args. \n");
@@ -141,9 +165,7 @@ int main(int argc, char* argv[])
 						charsSent = send(estFD, "Must use otp_enc with otp_end_d", 31, 0);
 					}
 			}
-		}
-
-		if(rightClient == 1){
+		}else if(rightClient == 1){
 			switch(childProc){
 				case -1:
 					perror("forking error");
@@ -156,6 +178,21 @@ int main(int argc, char* argv[])
 					}
 
 					printf("RECEIVED FROM CLIENT:\t%s\n", str);
+
+					char c;
+					int count = 0;
+					
+					plaintext = separateStrings(str, count);
+
+					do{
+						c = str[count];
+						count++;
+					}while(c != 36);
+
+					key =  separateStrings(str, count);
+
+					printf("plaintext: %s\n", plaintext);
+					printf("key: %s\n", key);
 
 					// FILE *file;
 					// file = fopen("toEncrypt", "a");

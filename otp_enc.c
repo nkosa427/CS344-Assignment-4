@@ -91,11 +91,12 @@ int main(int argc, char* argv[])
 	// fprintf(file, "%s", key);
 	// fclose(file);
 
-	toSend = malloc((strlen(plaintext)*2 +2 ) * sizeof(char));
+	toSend = malloc((strlen(plaintext)*2 +4) * sizeof(char));
 	memset(toSend, '\0', sizeof(toSend));
 	strcat(toSend, plaintext);
 	strcat(toSend, "$");
 	strcat(toSend, key);
+	strcat(toSend, "$");
 
 	// printf("plaintext: %s\n", plaintext);
 	// printf("key: %s\n", key);
