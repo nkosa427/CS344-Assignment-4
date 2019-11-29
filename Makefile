@@ -8,7 +8,7 @@ k:
 
 ed:
 	rm -f ed
-	$(CC) otp_enc_d.c -o ed
+	$(CC) otp_enc_d.c -o ed -D_XOPEN_SOURCE
 
 ec:
 	rm -f ec
