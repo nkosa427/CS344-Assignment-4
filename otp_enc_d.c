@@ -9,9 +9,35 @@
 #include <netdb.h>
 #include <fcntl.h>
 
-// char* encrypt(){
+char* encryptMsg(char* plaintext, char* key){
+	char* msg = malloc(strlen(plaintext) * sizeof(char));
+	memset(msg, '\0', sizeof(msg));
+	int p;
+	int k;
+	int sum;
 
-// }
+	for (int i = 0; i < strlen(plaintext); i++){
+		p = (int)plaintext[i] - 65;
+		if(p < 0){		//32(space) - 65 = -33, so make it the 27th char
+			p = 26;
+		}
+
+		k = (int)key[i] - 65;
+		if(k < 0){
+			k = 26;
+		}
+
+		sum = p+k;
+		sum = sum % 27;
+		sum += 65;			//turn back into ascii
+		if(sum == 91){	//91 = 26 (space) + 65
+			sum = 32;			//Make 27th character a space
+		}
+		msg[i] = (char)sum;
+	}
+
+	return msg;
+}
 
 char* separateStrings(char* str, int arg){
 	char c;
@@ -83,6 +109,7 @@ int main(int argc, char* argv[])
 
 	char* plaintext;
 	char* key;
+	char* msg;
 
 	if(argc < 2){
 		fprintf(stderr, "Enter correct number of args. \n");
@@ -193,6 +220,13 @@ int main(int argc, char* argv[])
 
 					printf("plaintext: %s\n", plaintext);
 					printf("key: %s\n", key);
+
+					printf("len text: %d\n", strlen(plaintext));
+					printf("len key: %d\n", strlen(key));
+
+					msg = encryptMsg(plaintext, key);
+					printf("Encrypted msg: %s\n", msg);
+					printf("len msg: %d\n", strlen(msg));
 
 					// FILE *file;
 					// file = fopen("toEncrypt", "a");
