@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 	int socketFD, port, charsSent, charsRead;
 	struct sockaddr_in serverAddr;
 	struct hostent* serverHostInfo;
-	char str[256];
+	char str[100000];
 	char exitstr[4];
 	char progName[8];
 	char* plaintext;

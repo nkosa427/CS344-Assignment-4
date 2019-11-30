@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 	int rightClient = 0;
 
 	socklen_t clientInfo;
-	char str[256];
+	char str[100000];
 	struct sockaddr_in serverAddr;
 	struct sockaddr_in clientAddr;
 	struct hostent* serverHostInfo;
@@ -158,8 +158,8 @@ int main(int argc, char* argv[])
 					perror("forking error");
 					exit(1);
 				case 0:
-					memset(str, '\0', 256);
-					charsRead = recv(estFD, str, 255, 0);
+					memset(str, '\0', 100000);
+					charsRead = recv(estFD, str, 100000, 0);
 					if(charsRead < 0){
 						fprintf(stderr, "Reading error\n");
 					}
@@ -198,8 +198,8 @@ int main(int argc, char* argv[])
 					perror("forking error");
 					exit(1);
 				case 0:
-					memset(str, '\0', 256);
-					charsRead = recv(estFD, str, 255, 0);
+					memset(str, '\0', 100000);
+					charsRead = recv(estFD, str, 100000, 0);
 					if(charsRead < 0){
 						fprintf(stderr, "Reading error\n");
 					}
