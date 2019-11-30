@@ -44,7 +44,7 @@ char* getText(FILE *file){
 
 int main(int argc, char* argv[])
 {
-	int socketFD, port, charsSent, charsRead, toSend;
+	int socketFD, port, charsSent, charsRead;
 	struct sockaddr_in serverAddr;
 	struct hostent* serverHostInfo;
 	char str[256];
@@ -52,9 +52,10 @@ int main(int argc, char* argv[])
 	char progName[8];
 	char* plaintext;
 	char* key;
+	char* toSend;
 
 	memset(progName, '\0', 8);
-	strcpy(progName, "otp_dec");
+	strcpy(progName, "otp_enc");
 
 	int goodConnection = 0;
 
@@ -82,7 +83,81 @@ int main(int argc, char* argv[])
 	if(strlen(plaintext) > strlen(key)){
 		fprintf(stderr, "Key not large enough\n");
 		exit(1);
+	}else if(strlen(key) > strlen(plaintext)){
+		key[strlen(plaintext)] = '\0';
 	}
+
+	// file = fopen("test", "w+");
+	// fprintf(file, "%s", key);
+	// fclose(file);
+
+	toSend = malloc((strlen(plaintext)*2 +4) * sizeof(char));
+	memset(toSend, '\0', sizeof(toSend));
+	strcat(toSend, plaintext);
+	strcat(toSend, "$");
+	strcat(toSend, key);
+	strcat(toSend, "$");
+
+	char* msg = malloc(strlen(plaintext) * sizeof(char));
+	memset(msg, '\0', sizeof(msg));
+	int p;
+	int k;
+	int sum;
+
+	for (int i = 0; i < strlen(plaintext); i++){
+		p = (int)plaintext[i] - 65;
+		if(p < 0){		//32(space) - 65 = -33, so make it the 27th char
+			p = 26;
+		}
+		k = (int)key[i] - 65;
+		if(k < 0){
+			k = 26;
+		}
+
+		sum = p+k;
+		sum = sum % 27;
+		sum += 65;			//turn back into ascii
+		if(sum == 91){	//91 = 26 (space) + 65
+			sum = 32;			//Make 27th character a space
+		}
+		msg[i] = (char)sum;
+	}
+
+	////////////Decrypt test here:
+	char* msg2 = malloc(strlen(plaintext) * sizeof(char));
+	memset(msg2, '\0', sizeof(msg));
+
+	for (int i = 0; i < strlen(plaintext); i++){
+		p = (int)msg[i] - 65;
+		if(p < 0){
+			p = 26;
+		}
+
+		k = (int)key[i] - 65;
+		if(k < 0){
+			k = 26;
+		}
+
+		sum = p-k;
+		sum = sum % 27;
+		if(sum < 0){
+			sum += 27;
+		}
+		printf("sum: %d\t", sum);
+		sum += 65;
+		if(sum == 91){
+			sum = 32;
+		}
+		msg2[i] = (char)sum;
+
+	}
+
+	printf("\n");
+
+	printf("txt: %s\n", plaintext);
+	printf("key: %s\n", key);
+	printf("msg: %s\n", msg);
+	printf("Dmg: %s\n", msg2);
 
 	// printf("plaintext: %s\n", plaintext);
 	// printf("key: %s\n", key);
@@ -96,7 +171,7 @@ int main(int argc, char* argv[])
 	if (serverHostInfo == NULL) { fprintf(stderr, "CLIENT: ERROR, no such host\n"); exit(0); }
 	memcpy((char*)&serverAddr.sin_addr.s_addr, (char*)serverHostInfo->h_addr_list[0], serverHostInfo->h_length); // Copy in the address
 
-for (int i = 0; i < 3; i++){
+for (int i = 0; i < 2; i++){
 
 		socketFD = socket(AF_INET, SOCK_STREAM, 0);
 		if(socketFD < 0){
@@ -112,19 +187,17 @@ for (int i = 0; i < 3; i++){
 		// fgets(str, sizeof(str)-1, stdin);
 
 		if(i == 0){
-			toSend = strlen(progName);
-			charsSent = send(socketFD, progName, toSend, 0);
+			charsSent = send(socketFD, progName, strlen(progName), 0);
 		}
 
 		if(i == 1 && goodConnection == 1){
-			toSend = strlen(plaintext);
-			charsSent = send(socketFD, plaintext, toSend, 0);
+			charsSent = send(socketFD, toSend, strlen(toSend), 0);
 		}
 
-		if(i == 2 && goodConnection == 1){
-			toSend = strlen(plaintext);
-			charsSent = send(socketFD, key, toSend, 0);
-		}	
+		// if(i == 2 && goodConnection == 1){
+		// 	toSend = strlen(plaintext);
+		// 	charsSent = send(socketFD, key, toSend, 0);
+		// }	
 		// else{
 		// 	memset(exitstr, '\0', 4);
 		// 	strcpy(exitstr, "@@@");
@@ -134,7 +207,9 @@ for (int i = 0; i < 3; i++){
 		
 		if(charsSent < 0){
 			fprintf(stderr, "Sending to socket error\n");
-		}else if(charsSent < toSend){
+		}else if(i == 0 && charsSent < strlen(progName)){
+			fprintf(stderr, "ERROR: Not all data written to socket\n");
+		}else if(i == 1 && charsSent < strlen(toSend)){
 			fprintf(stderr, "ERROR: Not all data written to socket\n");
 		}
 

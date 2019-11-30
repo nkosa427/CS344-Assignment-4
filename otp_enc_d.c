@@ -9,6 +9,57 @@
 #include <netdb.h>
 #include <fcntl.h>
 
+char* encryptMsg(char* plaintext, char* key){
+	char* msg = malloc(strlen(plaintext) * sizeof(char));
+	memset(msg, '\0', sizeof(msg));
+	int p;
+	int k;
+	int sum;
+
+	for (int i = 0; i < strlen(plaintext); i++){
+		p = (int)plaintext[i] - 65;
+		if(p < 0){		//32(space) - 65 = -33, so make it the 27th char
+			p = 26;
+		}
+
+		k = (int)key[i] - 65;
+		if(k < 0){
+			k = 26;
+		}
+
+		sum = p+k;
+		sum = sum % 27;
+		sum += 65;			//turn back into ascii
+		if(sum == 91){	//91 = 26 (space) + 65
+			sum = 32;			//Make 27th character a space
+		}
+		msg[i] = (char)sum;
+	}
+
+	return msg;
+}
+
+char* separateStrings(char* str, int arg){
+	char c;
+	int count = 0;
+	int len = strlen(str) / 2 + 1;
+
+	char* text = malloc(len * sizeof(char));
+	memset(text, '\0', sizeof(text));
+
+	do{
+		c = str[arg];
+		if(c != 36){			//36 is ascii for $
+			text[count] = c;
+		}
+		arg++;
+		count++;
+	}while(c != 36 && arg < strlen(str));
+
+	return text;
+
+}
+
 int checkClient(){
 	FILE* file;
 	char c;
@@ -28,7 +79,6 @@ int checkClient(){
 	remove("clientName");
 
 	if(strcmp(str, "otp_enc") == 0){
-		printf("check0\n");
 		return 1;
 	}else{
 		return 0;
@@ -57,29 +107,17 @@ int main(int argc, char* argv[])
 
 	pid_t childProc;
 
+	char* plaintext;
+	char* key;
+	char* msg;
+
 	if(argc < 2){
 		fprintf(stderr, "Enter correct number of args. \n");
 		exit(1);
 	}
 
-	// printf("Parent pid: %d\n", getpid());
-	// for (int i = 0; i < 5; i++){
-	// 	processes[i] = fork();
-	// 	printf("%s\n", );
-	// }
-
-	// memset((char*)&serverAddr, '\0', sizeof(serverAddr));
-	// port = atoi(argv[1]);
-	
-	// serverAddr.sin_family = AF_INET;
-	// serverAddr.sin_port = htons(port);
-
-	// struct hostnet* serverInfo = gethostbyname("localhost");
-	// // serverAddr.sin_addr.s_addr = 
-	// memcpy((char*)&serverAddr.sin_addr.s_addr, (char*)serverInfo->h_addr_list[0], serverInfo->h_length);
-
 	memset((char*)&serverAddr, '\0', sizeof(serverAddr));
-	port = atoi(argv[1]);		//CHANGE LATER TO SUPPORT ARGS
+	port = atoi(argv[1]);		
 
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(port);
@@ -154,9 +192,7 @@ int main(int argc, char* argv[])
 						charsSent = send(estFD, "Must use otp_enc with otp_end_d", 31, 0);
 					}
 			}
-		}
-
-		if(rightClient == 1){
+		}else if(rightClient == 1){
 			switch(childProc){
 				case -1:
 					perror("forking error");
@@ -169,6 +205,33 @@ int main(int argc, char* argv[])
 					}
 
 					printf("RECEIVED FROM CLIENT:\t%s\n", str);
+
+					char c;
+					int count = 0;
+					
+					plaintext = separateStrings(str, count);
+
+					do{
+						c = str[count];
+						count++;
+					}while(c != 36);
+
+					key =  separateStrings(str, count);
+
+					printf("plaintext: %s\n", plaintext);
+					printf("key: %s\n", key);
+
+					printf("len text: %d\n", strlen(plaintext));
+					printf("len key: %d\n", strlen(key));
+
+					msg = encryptMsg(plaintext, key);
+					printf("Encrypted msg: %s\n", msg);
+					printf("len msg: %d\n", strlen(msg));
+
+					// FILE *file;
+					// file = fopen("toEncrypt", "a");
+					// fprintf(file, "%s\n", str);
+					// fclose(file);
 
 					charsSent = send(estFD, "Message received\n", 17, 0);
 					if(charsSent < 0){
