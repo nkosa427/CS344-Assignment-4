@@ -24,6 +24,10 @@ dc:
 
 clean:
 	rm -f keygen
+	rm -f otp_enc_d
+	rm -f otp_enc
+	rm -f otp_dec_d
+	rm -f otp_dec
 	rm -f ec
 	rm -f ed
 	rm -f dc
