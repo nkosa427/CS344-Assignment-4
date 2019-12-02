@@ -49,13 +49,13 @@ int main(int argc, char* argv[])
 	struct hostent* serverHostInfo;
 	char str[100000];
 	char exitstr[4];
-	char progName[8];
+	char progName[10];
 	char* plaintext;
 	char* key;
 	char* toSend;
 
-	memset(progName, '\0', 8);
-	strcpy(progName, "otp_enc");
+	memset(progName, '\0', 10);
+	strcpy(progName, "otp_enc$$");
 
 	int goodConnection = 0;
 
@@ -98,66 +98,7 @@ int main(int argc, char* argv[])
 	strcat(toSend, key);
 	strcat(toSend, "$");
 
-	char* msg = malloc(strlen(plaintext) * sizeof(char));
-	memset(msg, '\0', sizeof(msg));
-	int p;
-	int k;
-	int sum;
 
-	for (int i = 0; i < strlen(plaintext); i++){
-		p = (int)plaintext[i] - 65;
-		if(p < 0){		//32(space) - 65 = -33, so make it the 27th char
-			p = 26;
-		}
-		k = (int)key[i] - 65;
-		if(k < 0){
-			k = 26;
-		}
-
-		sum = p+k;
-		sum = sum % 27;
-		sum += 65;			//turn back into ascii
-		if(sum == 91){	//91 = 26 (space) + 65
-			sum = 32;			//Make 27th character a space
-		}
-		msg[i] = (char)sum;
-	}
-
-	////////////Decrypt test here:
-	char* msg2 = malloc(strlen(plaintext) * sizeof(char));
-	memset(msg2, '\0', sizeof(msg));
-
-	for (int i = 0; i < strlen(plaintext); i++){
-		p = (int)msg[i] - 65;
-		if(p < 0){
-			p = 26;
-		}
-
-		k = (int)key[i] - 65;
-		if(k < 0){
-			k = 26;
-		}
-
-		sum = p-k;
-		sum = sum % 27;
-		if(sum < 0){
-			sum += 27;
-		}
-		printf("sum: %d\t", sum);
-		sum += 65;
-		if(sum == 91){
-			sum = 32;
-		}
-		msg2[i] = (char)sum;
-
-	}
-
-	printf("\n");
-
-	printf("txt: %s\n", plaintext);
-	printf("key: %s\n", key);
-	printf("msg: %s\n", msg);
-	printf("Dmg: %s\n", msg2);
 
 	// printf("plaintext: %s\n", plaintext);
 	// printf("key: %s\n", key);
@@ -225,11 +166,89 @@ for (int i = 0; i < 2; i++){
 		}else{
 			goodConnection = 1;
 		}
-
-		printf("RECEIVED FROM SERVER: \t%s\n", str);
+		if(i == 1){
+			printf("%s\n", str);
+		}
+		
 	}
 
 	close(socketFD);
 
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+// ////////////encrypt test here:
+// 	char* msg = malloc(strlen(plaintext) * sizeof(char));
+// 	memset(msg, '\0', sizeof(msg));
+// 	int p;
+// 	int k;
+// 	int sum;
+
+// 	for (int i = 0; i < strlen(plaintext); i++){
+// 		p = (int)plaintext[i] - 65;
+// 		if(p < 0){		//32(space) - 65 = -33, so make it the 27th char
+// 			p = 26;
+// 		}
+// 		k = (int)key[i] - 65;
+// 		if(k < 0){
+// 			k = 26;
+// 		}
+
+// 		sum = p+k;
+// 		sum = sum % 27;
+// 		sum += 65;			//turn back into ascii
+// 		if(sum == 91){	//91 = 26 (space) + 65
+// 			sum = 32;			//Make 27th character a space
+// 		}
+// 		msg[i] = (char)sum;
+// 	}
+
+// 	////////////Decrypt test here:
+// 	char* msg2 = malloc(strlen(plaintext) * sizeof(char));
+// 	memset(msg2, '\0', sizeof(msg));
+
+// 	for (int i = 0; i < strlen(plaintext); i++){
+// 		p = (int)msg[i] - 65;
+// 		if(p < 0){
+// 			p = 26;
+// 		}
+
+// 		k = (int)key[i] - 65;
+// 		if(k < 0){
+// 			k = 26;
+// 		}
+
+// 		sum = p-k;
+// 		sum = sum % 27;
+// 		if(sum < 0){
+// 			sum += 27;
+// 		}
+
+// 		sum += 65;
+// 		if(sum == 91){
+// 			sum = 32;
+// 		}
+// 		msg2[i] = (char)sum;
+
+// 	}
+
+// 	printf("\n");
+
+// 	printf("txt: %s\n", plaintext);
+// 	printf("key: %s\n", key);
+// 	printf("msg: %s\n", msg);
+// 	printf("Dmg: %s\n", msg2);
+
+
+
