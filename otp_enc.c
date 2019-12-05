@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
 	char* plaintext;
 	char* key;
 	char* toSend;
+	char* sendPtr = 0;
 
 	memset(progName, '\0', 10);
 	strcpy(progName, "otp_enc$$");
@@ -112,7 +113,7 @@ int main(int argc, char* argv[])
 	if (serverHostInfo == NULL) { fprintf(stderr, "CLIENT: ERROR, no such host\n"); exit(0); }
 	memcpy((char*)&serverAddr.sin_addr.s_addr, (char*)serverHostInfo->h_addr_list[0], serverHostInfo->h_length); // Copy in the address
 
-for (int i = 0; i < 2; i++){
+// for (int i = 0; i < 2; i++){
 
 		socketFD = socket(AF_INET, SOCK_STREAM, 0);
 		if(socketFD < 0){
@@ -127,30 +128,11 @@ for (int i = 0; i < 2; i++){
 		// memset(str, '\0', sizeof(str));
 		// fgets(str, sizeof(str)-1, stdin);
 
-		if(i == 0){
-			charsSent = send(socketFD, progName, strlen(progName), 0);
-		}
-
-		if(i == 1 && goodConnection == 1){
-			charsSent = send(socketFD, toSend, strlen(toSend), 0);
-		}
-
-		// if(i == 2 && goodConnection == 1){
-		// 	toSend = strlen(plaintext);
-		// 	charsSent = send(socketFD, key, toSend, 0);
-		// }	
-		// else{
-		// 	memset(exitstr, '\0', 4);
-		// 	strcpy(exitstr, "@@@");
-		// 	toSend = strlen(exitstr);
-		// 	charsSent = send(socketFD, exitstr, toSend, 0);
-		// }
-		
+		// if(i == 0){
+		charsSent = send(socketFD, progName, strlen(progName), 0);
 		if(charsSent < 0){
 			fprintf(stderr, "Sending to socket error\n");
-		}else if(i == 0 && charsSent < strlen(progName)){
-			fprintf(stderr, "ERROR: Not all data written to socket\n");
-		}else if(i == 1 && charsSent < strlen(toSend)){
+		}else if(charsSent < strlen(progName)){
 			fprintf(stderr, "ERROR: Not all data written to socket\n");
 		}
 
@@ -160,17 +142,41 @@ for (int i = 0; i < 2; i++){
 			fprintf(stderr, "Reading back from socket error\n");
 		}
 
-		if(i == 0 && strcmp(str, "Message received\n") != 0){
+		if(strcmp(str, "Message received\n") != 0){
 			fprintf(stderr, "ERROR: Client mismatch, exiting now\n");
 			exit(1);
 		}else{
 			goodConnection = 1;
 		}
-		if(i == 1){
+
+		// }
+
+		if(goodConnection == 1){
+			// do{
+				charsSent = send(socketFD, toSend[sendPtr], strlen(toSend), 0);
+				if(charsSent < 0){
+					fprintf(stderr, "Sending to socket error\n");
+				}
+
+			// }
+				
+
+				else if(charsSent < strlen(toSend)){
+					fprintf(stderr, "ERROR: Not all data written to socket\n");
+				}
+
+			memset(str, '\0', sizeof(str));
+			charsRead = recv(socketFD, str, sizeof(str)-1, 0);
+			if(charsRead < 0){
+				fprintf(stderr, "Reading back from socket error\n");
+			}else if(charsRead < strlen(key) + 1){
+				fprintf(stderr, "Not all info gotten back\n");
+			}
+
 			printf("%s\n", str);
+
 		}
-		
-	}
+
 
 	close(socketFD);
 

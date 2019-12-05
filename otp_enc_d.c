@@ -178,20 +178,7 @@ int main(int argc, char* argv[])
 					fprintf(stderr, "Error sending to client\n");
 				}
 
-				close(estFD);
-
-				// FILE* file;
-				// file = fopen("clientName", "w+");
-				// fprintf(file, "%s\n", str);
-				// fclose(file);
-
 				if(rightClient == 1){
-					clientInfo = sizeof(clientAddr);
-					estFD = accept(listenFD, (struct sockaddr*)&clientAddr, &clientInfo);
-					if(estFD < 0){
-						fprintf(stderr, "Accept error\n");
-					}
-
 					memset(str, '\0', 100000);
 					charsRead = recv(estFD, str, 100000, 0);
 					if(charsRead < 0){
@@ -228,6 +215,7 @@ int main(int argc, char* argv[])
 				}
 				
 				exit(0);
+				
 
 			default:
 				forkCount++;
@@ -238,10 +226,10 @@ int main(int argc, char* argv[])
 					}
 				}while(childPID > 0);
 
-				// if(forkCount > 4){
+				if(forkCount > 4){
 					childPID = wait(&childExitMethod);
 					forkCount--;
-				// }
+				}
 
 		}
 		
