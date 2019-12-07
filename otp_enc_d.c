@@ -43,18 +43,21 @@ char* separateStrings(char* str, int arg){
 	char c;
 	int count = 0;
 	int len = strlen(str) / 2 + 1;
+	int done = 0;
 
 	char* text = malloc(len * sizeof(char));
 	memset(text, '\0', sizeof(text));
 
 	do{
 		c = str[arg];
-		if(c != 36){			//36 is ascii for $
+		if(c != 36 && c != 64){			//36 is ascii for $, 64 is @
 			text[count] = c;
+		}else{
+			done = 1;
 		}
 		arg++;
 		count++;
-	}while(c != 36 && arg < strlen(str));
+	}while(done == 0 && arg < strlen(str));
 
 	return text;
 
@@ -100,7 +103,7 @@ int main(int argc, char* argv[])
 	int rightClient = 0;
 
 	socklen_t clientInfo;
-	char str[100000];
+	char str[75000];
 	struct sockaddr_in serverAddr;
 	struct sockaddr_in clientAddr;
 	struct hostent* serverHostInfo;
@@ -159,8 +162,8 @@ int main(int argc, char* argv[])
 				perror("forking error");
 				exit(1);
 			case 0:
-				memset(str, '\0', 100000);
-				charsRead = recv(estFD, str, 100000, 0);
+				memset(str, '\0', 75000);
+				charsRead = recv(estFD, str, 75000, 0);
 				if(charsRead < 0){
 					fprintf(stderr, "Reading error\n");
 				}
@@ -179,25 +182,62 @@ int main(int argc, char* argv[])
 				}
 
 				if(rightClient == 1){
-					memset(str, '\0', 100000);
-					charsRead = recv(estFD, str, 100000, 0);
-					if(charsRead < 0){
-						fprintf(stderr, "Reading error\n");
-					}
+
+					char lenStr[100];
+					memset(lenStr, '\0', 100);
+					charsRead = recv(estFD, lenStr, 100, 0);
+					// printf("received length\n");
+					int length = atoi(lenStr);
+					printf("Server: Total length: %d\n", length);
+
+					memset(str, '\0', 75000);
+
+					int recPos = 0;
+					char enc[75000];
+					memset(enc, '\0', 75000);
+
+					char sentStr[100];
+
+					do{
+						memset(str, '\0', 75000);
+						charsRead = recv(estFD, str, 75000, 0);
+						if(charsRead < 0){
+							fprintf(stderr, "Reading error\n");
+						}
+
+						memset(sentStr, '\0', 100);
+						sprintf(sentStr, "%d", charsRead);
+						printf("Server: Read: %s\n", sentStr);
+
+						charsSent = send(estFD, sentStr, strlen(sentStr), 0);
+						if(charsSent < 0){
+							fprintf(stderr, "ERROR: Sending from server\n");
+						}
+
+						recPos += charsRead;
+						strcat(enc, str);
+
+						// printf("receiving: %c\n", str[strlen(str)-1]);
+						printf("Server: recpos: %d\n", recPos);
+						printf("Server: charsRead: %d\n\n", charsRead);
+
+					}while(recPos < length-1);
+					// 
+					printf("Server: done receiving\n");
 
 					// printf("SERVER1: RECEIVED FROM CLIENT:\t%s\n", str);
 
 					char c;
 					int count = 0;
 
-					plaintext = separateStrings(str, count);
+					plaintext = separateStrings(enc, count);
 
 					do{
 						c = str[count];
 						count++;
 					}while(c != 36);
 
-					key =  separateStrings(str, count);
+					key =  separateStrings(enc, count);
 
 
 					// printf("SERVER: plaintext: %s\n", plaintext);
@@ -206,7 +246,7 @@ int main(int argc, char* argv[])
 					msg = encryptMsg(plaintext, key);
 					// printf("SERVER: Encrypted msg: %s\n", msg);
 
-					charsSent = send(estFD, msg, strlen(msg), 0);
+					charsSent = send(estFD, msg, 75000, 0);
 					if(charsSent < 0){
 						fprintf(stderr, "Error sending to client\n");
 					}
@@ -215,7 +255,7 @@ int main(int argc, char* argv[])
 				}
 				
 				exit(0);
-				
+
 
 			default:
 				forkCount++;

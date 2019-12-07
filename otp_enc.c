@@ -47,13 +47,14 @@ int main(int argc, char* argv[])
 	int socketFD, port, charsSent, charsRead;
 	struct sockaddr_in serverAddr;
 	struct hostent* serverHostInfo;
-	char str[100000];
+	char str[75000];
 	char exitstr[4];
 	char progName[10];
 	char* plaintext;
 	char* key;
 	char* toSend;
-	char* sendPtr = 0;
+	char* sendPtr;
+	
 
 	memset(progName, '\0', 10);
 	strcpy(progName, "otp_enc$$");
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
 	strcat(toSend, plaintext);
 	strcat(toSend, "$");
 	strcat(toSend, key);
-	strcat(toSend, "$");
+	strcat(toSend, "@");
 
 
 
@@ -139,7 +140,7 @@ int main(int argc, char* argv[])
 		memset(str, '\0', sizeof(str));
 		charsRead = recv(socketFD, str, sizeof(str)-1, 0);
 		if(charsRead < 0){
-			fprintf(stderr, "Reading back from socket error\n");
+			fprintf(stderr, "CLIENT: Reading back from socket error\n");
 		}
 
 		if(strcmp(str, "Message received\n") != 0){
@@ -151,27 +152,66 @@ int main(int argc, char* argv[])
 
 		// }
 
+
 		if(goodConnection == 1){
-			// do{
-				charsSent = send(socketFD, toSend[sendPtr], strlen(toSend), 0);
+			int length = strlen(toSend);
+			char lenStr[100];
+			memset(lenStr, '\0', 100);
+			sprintf(lenStr, "%d", length);
+			charsSent = send(socketFD, lenStr, strlen(lenStr), 0);
+			if(charsSent < 0){
+					fprintf(stderr, "Sending to socket error\n");
+			}
+
+			int sendPos = 0;
+			int added = 0;
+			int sent;
+			char recStr[100];
+			
+			do{
+				toSend += added;
+				charsSent = send(socketFD, toSend, strlen(toSend), 0);
 				if(charsSent < 0){
 					fprintf(stderr, "Sending to socket error\n");
 				}
 
-			// }
-				
-
-				else if(charsSent < strlen(toSend)){
-					fprintf(stderr, "ERROR: Not all data written to socket\n");
+				memset(recStr, '\0', 100);
+				charsRead = recv(socketFD, recStr, 100, 0);
+				if(charsRead < 0){
+					fprintf(stderr, "ERROR: Client didn't read length\n");
 				}
 
+
+				sent = atoi(recStr);
+				printf("CLIENT: sent (gotten back): %d\n", sent);
+
+				sendPos += sent;
+				added = sent;
+				printf("sendPos: %d\n", sendPos);
+				// printf("charsSent: %d\n", charsSent);
+
+			}while(sendPos < length);
+
+			printf("Client: done with send\n");
+
 			memset(str, '\0', sizeof(str));
-			charsRead = recv(socketFD, str, sizeof(str)-1, 0);
-			if(charsRead < 0){
-				fprintf(stderr, "Reading back from socket error\n");
-			}else if(charsRead < strlen(key) + 1){
-				fprintf(stderr, "Not all info gotten back\n");
-			}
+			int recPos = 0;
+			char msg[75000];
+			memset(msg, '\0', strlen(msg));
+
+			do{
+				charsRead = recv(socketFD, str, sizeof(str)-1, 0);
+				if(charsRead < 0){
+					fprintf(stderr, "Reading back from socket error\n");
+				}
+
+				recPos += charsRead;
+
+				strcat(msg, str);
+
+			}while(recPos < strlen(plaintext));
+			
+			
 
 			printf("%s\n", str);
 
