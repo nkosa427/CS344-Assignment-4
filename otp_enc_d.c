@@ -60,32 +60,6 @@ char* separateStrings(char* str, int arg){
 
 }
 
-int checkClient(){
-	FILE* file;
-	char c;
-	char str[256];
-	int count = 0;
-	file = fopen("clientName", "r");
-
-	do{
-		c = fgetc(file);
-		if(c != 10 && count < 256){
-			str[count] = c;
-		}
-		count++;
-	}while(c != 10 && count < 256);
-
-	fclose(file);
-	remove("clientName");
-
-	if(strcmp(str, "otp_enc") == 0){
-		return 1;
-	}else{
-		return 0;
-	}
-
-}
-
 int main(int argc, char* argv[])
 {
 	int listenFD, bindFD, estFD;
@@ -100,7 +74,7 @@ int main(int argc, char* argv[])
 	int rightClient = 0;
 
 	socklen_t clientInfo;
-	char str[100000];
+	char str[75000];
 	struct sockaddr_in serverAddr;
 	struct sockaddr_in clientAddr;
 	struct hostent* serverHostInfo;
@@ -159,15 +133,15 @@ int main(int argc, char* argv[])
 				perror("forking error");
 				exit(1);
 			case 0:
-				memset(str, '\0', 100000);
-				charsRead = recv(estFD, str, 100000, 0);
+				memset(str, '\0', 75000);
+				charsRead = recv(estFD, str, 75000, 0);
 				if(charsRead < 0){
 					fprintf(stderr, "Reading error\n");
 				}
 
 				// printf("SERVER0: RECEIVED FROM CLIENT:\t%s\n", str);
 
-				if(strcmp(str, "otp_enc$$") != 0){
+				if(strcmp(str, "otp_enc$$") != 0){	//Checks if right client
 					charsSent = send(estFD, "Must use otp_enc with otp_enc_d", 31, 0);
 				}else{
 					charsSent = send(estFD, "Message received\n", 17, 0);
@@ -192,8 +166,8 @@ int main(int argc, char* argv[])
 						fprintf(stderr, "Accept error\n");
 					}
 
-					memset(str, '\0', 100000);
-					charsRead = recv(estFD, str, 100000, 0);
+					memset(str, '\0', 75000);
+					charsRead = recv(estFD, str, 75000, 0);	//Receives string
 					if(charsRead < 0){
 						fprintf(stderr, "Reading error\n");
 					}
@@ -208,7 +182,7 @@ int main(int argc, char* argv[])
 					do{
 						c = str[count];
 						count++;
-					}while(c != 36);
+					}while(c != 36);	//Gets place in string to start at where the key is
 
 					key =  separateStrings(str, count);
 
@@ -230,7 +204,7 @@ int main(int argc, char* argv[])
 				exit(0);
 
 			default:
-				forkCount++;
+				forkCount++;	//Count number of concurrent processes
 				do{
 					childPID = waitpid(-1, &childExitMethod, WNOHANG);
 					if(childPID > 0){
@@ -239,7 +213,7 @@ int main(int argc, char* argv[])
 				}while(childPID > 0);
 
 				// if(forkCount > 4){
-					childPID = wait(&childExitMethod);
+					childPID = wait(&childExitMethod);	//Waits if there's 5
 					forkCount--;
 				// }
 

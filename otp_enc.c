@@ -17,7 +17,7 @@ char* getText(FILE *file){
 
 	do{
 		c = fgetc(file);
-		if(c < 65 && c != 32 && c != 10 || c > 90){
+		if(c < 65 && c != 32 && c != 10 || c > 90){	//If char not letter and not a space or new line
 			// printf("char in question: %c\n", c);
 			fprintf(stderr, "Invalid file contents\n");
 			exit(1);
@@ -33,8 +33,8 @@ char* getText(FILE *file){
 
 	do{
 		c = fgetc(file);
-		if(c != 10){
-			text[count] = c;
+		if(c != 10){	//If not new line
+			text[count] = c;	//Makes string character by character
 		}
 		count++;
 	}while(c != 10);
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 	char* toSend;
 
 	memset(progName, '\0', 10);
-	strcpy(progName, "otp_enc$$");
+	strcpy(progName, "otp_enc$$");	//Sends this to the server to verify it's the right program
 
 	int goodConnection = 0;
 
@@ -84,14 +84,14 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Key not large enough\n");
 		exit(1);
 	}else if(strlen(key) > strlen(plaintext)){
-		key[strlen(plaintext)] = '\0';
+		key[strlen(plaintext)] = '\0';	//Makes key string same size as plaintext for simplicity's sake
 	}
 
 	// file = fopen("test", "w+");
 	// fprintf(file, "%s", key);
 	// fclose(file);
 
-	toSend = malloc((strlen(plaintext)*2 +4) * sizeof(char));
+	toSend = malloc((strlen(plaintext)*2 +4) * sizeof(char));	//Adds a couple places for some termination chars
 	memset(toSend, '\0', sizeof(toSend));
 	strcat(toSend, plaintext);
 	strcat(toSend, "$");
@@ -127,13 +127,13 @@ for (int i = 0; i < 2; i++){
 		// memset(str, '\0', sizeof(str));
 		// fgets(str, sizeof(str)-1, stdin);
 
-		if(i == 0){
+		if(i == 0){	//Sends program name on first run.
 			charsSent = send(socketFD, progName, strlen(progName), 0);
 		}
 
 		if(i == 1 && goodConnection == 1){
 			charsSent = send(socketFD, toSend, strlen(toSend), 0);
-		}
+		}	//Sends actual characters on secnod run if the connection is good
 
 		// if(i == 2 && goodConnection == 1){
 		// 	toSend = strlen(plaintext);
@@ -162,12 +162,12 @@ for (int i = 0; i < 2; i++){
 
 		if(i == 0 && strcmp(str, "Message received\n") != 0){
 			fprintf(stderr, "ERROR: Client mismatch, exiting now\n");
-			exit(1);
+			exit(1);	//Exits if server says it's not the correct client.
 		}else{
 			goodConnection = 1;
 		}
 		if(i == 1){
-			printf("%s\n", str);
+			printf("%s\n", str);	//Prints encrypted message to screen
 		}
 		
 	}

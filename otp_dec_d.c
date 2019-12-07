@@ -22,7 +22,7 @@ char* decryptMsg(char* cipher, char* key){
 			p = 26;
 		}
 
-		k = (int)key[i] - 65;
+		k = (int)key[i] - 65;	//Same for the key
 		if(k < 0){
 			k = 26;
 		}
@@ -46,7 +46,7 @@ char* decryptMsg(char* cipher, char* key){
 char* separateStrings(char* str, int arg){
 	char c;
 	int count = 0;
-	int len = strlen(str) / 2 + 1;
+	int len = strlen(str) / 2 + 1;	//Adds 1 because int division rounds down
 
 	char* text = malloc(len * sizeof(char));
 	memset(text, '\0', sizeof(text));
@@ -64,32 +64,6 @@ char* separateStrings(char* str, int arg){
 
 }
 
-int checkClient(){
-	FILE* file;
-	char c;
-	char str[256];
-	int count = 0;
-	file = fopen("clientName", "r");
-
-	do{
-		c = fgetc(file);
-		if(c != 10 && count < 256){
-			str[count] = c;
-		}
-		count++;
-	}while(c != 10 && count < 256);
-
-	fclose(file);
-	remove("clientName");
-
-	if(strcmp(str, "otp_dec") == 0){
-		return 1;
-	}else{
-		return 0;
-	}
-
-}
-
 int main(int argc, char* argv[])
 {
 	int listenFD, bindFD, estFD;
@@ -104,7 +78,7 @@ int main(int argc, char* argv[])
 	int rightClient = 0;
 
 	socklen_t clientInfo;
-	char str[100000];
+	char str[75000];
 	struct sockaddr_in serverAddr;
 	struct sockaddr_in clientAddr;
 	struct hostent* serverHostInfo;
@@ -163,15 +137,15 @@ int main(int argc, char* argv[])
 				perror("forking error");
 				exit(1);
 			case 0:
-				memset(str, '\0', 100000);
-				charsRead = recv(estFD, str, 100000, 0);
+				memset(str, '\0', 75000);
+				charsRead = recv(estFD, str, 75000, 0);
 				if(charsRead < 0){
 					fprintf(stderr, "Reading error\n");
 				}
 
 				// printf("SERVER0: RECEIVED FROM CLIENT:\t%s\n", str);
 
-				if(strcmp(str, "otp_dec$$") != 0){
+				if(strcmp(str, "otp_dec$$") != 0){	//If the client isn't otp_dec
 					charsSent = send(estFD, "Must use otp_dec with otp_dec_d", 31, 0);
 				}else{
 					charsSent = send(estFD, "Message received\n", 17, 0);
@@ -196,8 +170,8 @@ int main(int argc, char* argv[])
 						fprintf(stderr, "Accept error\n");
 					}
 
-					memset(str, '\0', 100000);
-					charsRead = recv(estFD, str, 100000, 0);
+					memset(str, '\0', 75000);
+					charsRead = recv(estFD, str, 75000, 0);	//Accepts encrypted msg and key
 					if(charsRead < 0){
 						fprintf(stderr, "Reading error\n");
 					}
@@ -211,8 +185,8 @@ int main(int argc, char* argv[])
 
 					do{
 						c = str[count];
-						count++;
-					}while(c != 36);
+						count++;				//count is place for the next separateStrings function to start at
+					}while(c != 36);	//while next char not $.
 
 					key =  separateStrings(str, count);
 
@@ -242,8 +216,8 @@ int main(int argc, char* argv[])
 					}
 				}while(childPID > 0);
 
-				// if(forkCount > 4){
-					childPID = wait(&childExitMethod);
+				// if(forkCount > 4){	//If 5 children
+					childPID = wait(&childExitMethod);	//wait until one's done
 					forkCount--;
 				// }
 

@@ -17,7 +17,7 @@ char* getText(FILE *file){
 
 	do{
 		c = fgetc(file);
-		if(c < 65 && c != 32 && c != 10 || c > 90){
+		if(c < 65 && c != 32 && c != 10 || c > 90){	//If char is not letter, not space, not newline
 			// printf("char in question: %c\n", c);
 			fprintf(stderr, "Invalid file contents\n");
 			exit(1);
@@ -33,7 +33,7 @@ char* getText(FILE *file){
 
 	do{
 		c = fgetc(file);
-		if(c != 10){
+		if(c != 10){	//If not new line
 			text[count] = c;
 		}
 		count++;
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	if(strlen(chiper) > strlen(key)){
 		fprintf(stderr, "Key not large enough\n");
 		exit(1);
-	}else if(strlen(key) > strlen(chiper)){
+	}else if(strlen(key) > strlen(chiper)){	//Makes key same length as cipher if larger
 		key[strlen(chiper)] = '\0';
 	}
 
@@ -91,12 +91,12 @@ int main(int argc, char* argv[])
 	// fprintf(file, "%s", key);
 	// fclose(file);
 
-	toSend = malloc((strlen(chiper)*2 +4) * sizeof(char));
+	toSend = malloc((strlen(chiper)*2 +4) * sizeof(char));	//So everything can be sent over in 1 string
 	memset(toSend, '\0', sizeof(toSend));
 	strcat(toSend, chiper);
 	strcat(toSend, "$");
 	strcat(toSend, key);
-	strcat(toSend, "$");
+	strcat(toSend, "$");	//$ is terminaton character
 
 
 
@@ -127,11 +127,11 @@ for (int i = 0; i < 2; i++){
 		// memset(str, '\0', sizeof(str));
 		// fgets(str, sizeof(str)-1, stdin);
 
-		if(i == 0){
+		if(i == 0){	//Sends program name over first
 			charsSent = send(socketFD, progName, strlen(progName), 0);
 		}
 
-		if(i == 1 && goodConnection == 1){
+		if(i == 1 && goodConnection == 1){	//Then sends actual content if client is right
 			charsSent = send(socketFD, toSend, strlen(toSend), 0);
 		}
 
@@ -160,14 +160,14 @@ for (int i = 0; i < 2; i++){
 			fprintf(stderr, "Reading back from socket error\n");
 		}
 
-		if(i == 0 && strcmp(str, "Message received\n") != 0){
+		if(i == 0 && strcmp(str, "Message received\n") != 0){	//If client is not connected to right server
 			fprintf(stderr, "ERROR: Client mismatch, exiting now\n");
 			exit(1);
 		}else{
 			goodConnection = 1;
 		}
 		if(i == 1){
-			printf("%s\n", str);
+			printf("%s\n", str);	//Print decrypted msg to screen
 		}
 		
 	}
